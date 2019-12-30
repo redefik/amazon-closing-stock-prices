@@ -72,4 +72,39 @@ autoplot(time_series, series="Original") +
 adf.test(time_series)
 # p-value is >= 0.99 so we cannot reject the null hypotesis of non-stationarity
 
+# Now we split the time_series in two parts: a training set and a test set
+# The training set will be used to train an ARIMA model
+# The test set will be used to evaluate the accuracy of the model
+# The size of the training set is 80% of the total sample
+training <- window(time_series, start=1, end=floor(data_summary$Size*0.8))
+test <- window(time_series, start=floor(data_summary$Size*0.8)+1)
 
+# An ARIMA model requires a stationary series in input.
+# We will demand the regularization of mean to the function auto.arima()
+# Instead we explictly regularize variance using a Box-Cox transformation.
+# Then, we will have to remember to transform the test set too during accuracy
+# evaluation
+lambda_training <- BoxCox.lambda(training)
+log_training <- BoxCox(training, lambda_training)
+# Display the result
+autoplot(log_training) +
+  ggtitle("Training Set - Box Cox Transformation")
+
+# Now we can train the model via auto.arima()
+ARIMA_model <- auto.arima(log_training)
+# Let's investigate the fitted model
+ARIMA_model
+# Now we study the residuals of the models
+residuals <- ARIMA_model$residuals
+checkresiduals(residuals)
+mean(residuals)
+Box.test(residuals, lag=100, type="Ljung-Box")
+# They seem to have good properties
+# Therefore, we proceed with the forecasting
+ARIMA_forecasts <- forecast(ARIMA_model, h=length(test))
+# Let's compare the forecasted prices with the actual prices
+log_test <- BoxCox(test, lambda_training)
+autoplot(log_test, series = "Actual") +
+  autolayer(ARIMA_forecasts, series="Forecast", PI = FALSE)
+# It is not an incredible forecast and we are not surprised. Forecast
+# the behaviour of a financial series is an hard problem.
