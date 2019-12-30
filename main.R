@@ -105,6 +105,7 @@ ARIMA_forecasts <- forecast(ARIMA_model, h=length(test))
 # Let's compare the forecasted prices with the actual prices
 log_test <- BoxCox(test, lambda_training)
 autoplot(log_test, series = "Actual") +
-  autolayer(ARIMA_forecasts, series="Forecast", PI = FALSE)
+  autolayer(ARIMA_forecasts, series="Forecast", PI = FALSE) +
+  ggtitle("Prediction vs Test Set")
 # It is not an incredible forecast and we are not surprised. Forecast
 # the behaviour of a financial series is an hard problem.
